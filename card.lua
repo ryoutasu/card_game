@@ -88,11 +88,9 @@ function Card:update(dt)
 
     if self.state == STATE.IN_HAND then
         if mouseOver and not Card.holding then
-            -- self.offset.y = math.max(self.offset.y - dt*riseSpeed, -riseHeight)
-            self.offset.y = math.lerp(self.offset.y, -riseHeight, (riseHeight-self.offset.y)*0.2*dt)
+            self.offset.y = math.lerp(self.offset.y, -riseHeight, 0.1)
         else
-            -- self.offset.y = math.min(self.offset.y + dt*riseSpeed, 0)
-            self.offset.y = math.lerp(self.offset.y, 0, (riseHeight-self.offset.y)*0.2*dt)
+            self.offset.y = math.lerp(self.offset.y, 0, 0.1)
         end
     elseif self.state == STATE.HOLD then
         self.offset = Vector(mx, my) + self.hold_point - self.pos
@@ -100,18 +98,12 @@ function Card:update(dt)
         local pos = self.pos + self.offset
         local return_pos = self.pos:clone()
 
-        local sx = math.lerp(pos.x, return_pos.x, (return_pos.x - pos.x)*0.2*dt)
-        local sy = math.lerp(pos.y, return_pos.y, (return_pos.y - pos.y)*0.2*dt)
-        -- self.offset.x = math.lerp(self.offset.x, 0, math.abs(self.offset.x)*0.2*dt)
-        -- self.offset.y = math.lerp(self.offset.y, 0, math.abs(self.offset.y)*0.2*dt)
-        local speed = Vector(sx, sy)
+        self.offset.x = math.lerp(self.offset.x, 0, 0.1)
+        self.offset.y = math.lerp(self.offset.y, 0, 0.1)
 
-        --if (pos - return_pos):len() < (speed):len() then
-        if speed:len() < 3 then
+        if self.offset:len() < 1 then
             self.offset = Vector(0, 0)
             self.state = STATE.IN_HAND
-        else
-            self.offset = pos - speed
         end
     end
 end
