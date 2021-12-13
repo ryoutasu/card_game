@@ -108,18 +108,21 @@ function Card:update(dt)
 end
 
 function Card:draw()
-    local x, y = self.pos.x+self.offset.x, self.pos.y+self.offset.y
+    local x, y = (self.pos+self.offset):unpack()
     local mx, my = love.mouse.getPosition()
     local mouseOver = self:isPointInside({mx, my})
 
     local color = { 1, 1, 1, 1 }
-    if mouseOver and self.state == STATE.IN_HAND and not Card.holding then
-        color = { 0.4, 0.4, 1, 1 }
+    if (mouseOver and self.state == STATE.IN_HAND and not Card.holding) then
+        color = { 0.2, 0.2, 1, 1 }
+    elseif self.state == STATE.HOLD then
+        color = { 0.6, 0.6, 1, 1 }
     end
 
     love.graphics.setColor(color)
     love.graphics.rectangle('line', x, y, self.width, self.height)
 
+    love.graphics.setColor(1, 1, 1, 1)
     love.graphics.print(self.text, x+5, y+5)
 end
 
