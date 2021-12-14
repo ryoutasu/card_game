@@ -7,17 +7,19 @@ local holdTime = 0.1
 ---Hand of a cards
 ---@param x number right
 ---@param y number bottom
-function Hand:init(x, y)
+function Hand:init(x, y, board)
     self.pos = Vector(x, y)
     self.cards = {}
     self.maxCards = 10
     self.clickTime = 0
+    self.board = board
 end
 
 function Hand:addCard(card)
     if not Card.holding then
         if #self.cards < self.maxCards then
-            card = card or Card(self.pos)
+            card = card or Card(self.pos, self.board)
+            if not card.board then card.board = self.board end
             card:setText(N)
             self.cards[#self.cards+1] = card
             card:setPosition(#self.cards)
@@ -42,6 +44,7 @@ function Hand:removeCard(card)
         elseif type(card) == "table" then
             self:removeCard(card.position)
         elseif type(card) == "number" then
+            self.cards[card]:remove()
             for i = card, #self.cards-1 do
                 self.cards[i] = self.cards[i+1]
                 self.cards[i]:setPosition(i)
@@ -74,15 +77,13 @@ function Hand:mousepressed( x, y, button, istouch, presses )
     if button == 1 then
         if Card.holding then
             for i, v in ipairs(self.cards) do
-                local mx, my = love.mouse.getPosition()
                 if v:isHeld() then
-                    v:returnToHand()
+                    v:release(x, y)
                 end
             end
         else
             for i, v in ipairs(self.cards) do
-                local mx, my = love.mouse.getPosition()
-                if (v:isPointInside({mx, my})) then
+                if (v:isPointInside({x, y})) then
                     v:hold(true)
                     self.clickTime = 0
                     return
@@ -94,13 +95,11 @@ end
 
 function Hand:mousereleased( x, y, button, istouch, presses )
     if button == 1 then
-        if Card.holding then
-            if self.clickTime > holdTime then
-                for i, v in ipairs(self.cards) do
-                    local mx, my = love.mouse.getPosition()
-                    if v:isHeld() then
-                        v:returnToHand()
-                    end
+        if Card.holding
+        and self.clickTime > holdTime then
+            for i, v in ipairs(self.cards) do
+                if v:isHeld() then
+                    v:release(x, y)
                 end
             end
         end

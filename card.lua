@@ -6,18 +6,16 @@ local offset_x = 10
 local width = 100
 local height = 150
 
-local riseHeight = 25
-local riseSpeed = 200
-local returnSpeed = 2000
+local riseHeight = 30
 
 local STATE = {
     IN_HAND = 1,
     HOLD = 2,
-    ON_TABLE = 3,
-    RETURNING = 4
+    ON_BOARD = 3,
+    MOVING = 4
 }
 
-function Card:init(hand_point)
+function Card:init(hand_point, board)
     self.hand_point = hand_point
 
     self.pos = Vector(0, 0)
@@ -25,10 +23,10 @@ function Card:init(hand_point)
     self.hold_point = Vector(0, 0)
     self.width = width
     self.height = height
-    self.mouseIn = false
+    self.board = board
     self.text = ''
     self.state = STATE.IN_HAND
-    self.time = 0
+    self.space = nil
 end
 
 function Card:setPosition(pos)
@@ -62,8 +60,28 @@ function Card:hold(doHold)
     Card.holding = doHold
 end
 
+function Card:release(x, y)
+    local board = self.board
+    local space = board:isPointInside({x, y})
+    if space and space.free then
+        self.state = STATE.MOVING
+        self.nexState = STATE.ON_BOARD
+
+        local pos = self.pos + self.offset
+        self.pos = space.pos:clone()
+        self.offset = pos - self.pos
+        Card.holding = false
+
+        space.free = false
+        self.space = space
+    else
+        self:returnToHand()
+    end
+end
+
 function Card:returnToHand()
-    self.state = STATE.RETURNING
+    self.state = STATE.MOVING
+    self.nexState = STATE.IN_HAND
     Card.holding = false
 end
 
@@ -82,6 +100,13 @@ function Card:isPointInside(point)
     return IsPointInsideRect(rect, point)
 end
 
+function Card:remove()
+    if self.space then
+        self.space.free = true
+        self.space = nil
+    end
+end
+
 function Card:update(dt)
     local mx, my = love.mouse.getPosition()
     local mouseOver = self:isPointInside({mx, my})
@@ -94,16 +119,13 @@ function Card:update(dt)
         end
     elseif self.state == STATE.HOLD then
         self.offset = Vector(mx, my) + self.hold_point - self.pos
-    elseif self.state == STATE.RETURNING then
-        local pos = self.pos + self.offset
-        local return_pos = self.pos:clone()
-
+    elseif self.state == STATE.MOVING then
         self.offset.x = math.lerp(self.offset.x, 0, 0.1)
         self.offset.y = math.lerp(self.offset.y, 0, 0.1)
 
         if self.offset:len() < 1 then
             self.offset = Vector(0, 0)
-            self.state = STATE.IN_HAND
+            self.state = self.nexState
         end
     end
 end
@@ -125,6 +147,7 @@ function Card:draw()
 
     love.graphics.setColor(1, 1, 1, 1)
     love.graphics.print(self.text, x+5, y+5)
+    love.graphics.print(self.state, x+5, y+20)
 end
 
 return Card

@@ -10,8 +10,8 @@ local board = nil
 function love.load()
     love.window.setMode(1200, 800)
 
-    hand = Hand(50, 750)
     board = Board(600, 400, 7)
+    hand = Hand(50, 750, board)
 
     hand:addCard()
     hand:addCard()

@@ -21,9 +21,20 @@ function Board:init(x, y, spaces)
             pos = Vector(sx, y),
             width = spaceWidth,
             height = spaceHeight,
+            free = true
         }
         self.spaces[i] = s
     end
+end
+
+function Board:isPointInside(point)
+    for i, v in ipairs(self.spaces) do
+        local rect = { v.pos.x, v.pos.y, v.pos.x+v.width, v.pos.y+v.height }
+        if IsPointInsideRect(rect, point) then
+            return v
+        end
+    end
+    return false
 end
 
 function Board:update(dt)
