@@ -3,9 +3,6 @@ Card.holding = false
 
 local offset_x = 10
 
-local width = 100
-local height = 150
-
 local riseHeight = 30
 
 local STATE = {
@@ -15,10 +12,8 @@ local STATE = {
     MOVING = 4
 }
 
-function Card:init(hand_point, board)
-    self.hand_point = hand_point
-
-    self.pos = Vector(0, 0)
+function Card:init(board, width, height)
+    self.pos = Vector(600, 400)
     self.offset = Vector(0, 0)
     self.hold_point = Vector(0, 0)
     self.width = width
@@ -30,15 +25,15 @@ function Card:init(hand_point, board)
     self.locked = false
 end
 
-function Card:setPosition(pos)
-    if self.state == STATE.IN_HAND then
-        self.position = pos
+-- function Card:setPosition(pos)
+--     if self.state == STATE.IN_HAND then
+--         self.position = pos
 
-        local p = pos-1
-        self.pos.x = self.hand_point.x + (width*p) + (offset_x*p)
-        self.pos.y = self.hand_point.y - height
-    end
-end
+--         local p = pos-1
+--         self.pos.x = self.hand_point.x + (self.width*p) + (offset_x*p)
+--         self.pos.y = self.hand_point.y - self.height
+--     end
+-- end
 
 function Card:setText(text)
     self.text = text
@@ -46,6 +41,10 @@ end
 
 function Card:isHeld()
     return self.state == STATE.HOLD
+end
+
+function Card:isOnBoard()
+    return self.state == STATE.ON_BOARD or self.nextState == STATE.ON_BOARD
 end
 
 function Card:hold(doHold)
@@ -84,7 +83,7 @@ function Card:release(x, y)
     end
 end
 
-function Card:returnToHand()
+function Card:moveTo(newPos, nextState)
     self.state = STATE.MOVING
     self.nextState = STATE.IN_HAND
     Card.holding = false

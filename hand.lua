@@ -3,9 +3,12 @@ local Hand = Class{}
 
 local N = 1
 local holdTime = 0.1
+local offset_x = 10
+local card_width = 100
+local card_height = 150
 
 ---Hand of a cards
----@param x number right
+---@param x number center
 ---@param y number bottom
 function Hand:init(x, y, board)
     self.pos = Vector(x, y)
