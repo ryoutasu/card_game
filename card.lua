@@ -21,6 +21,7 @@ function Card:init(board, width, height)
     self.board = board
     self.text = ''
     self.state = STATE.IN_HAND
+    self.space = nil
     self.locked = false
 end
 
@@ -61,33 +62,30 @@ end
 
 function Card:release(x, y)
     local board = self.board
-    if not board.card and board:isPointInside({x, y}) then
-        -- self.state = STATE.MOVING
-        -- self.nextState = STATE.ON_BOARD
+    local space = board:isPointInside({x, y})
+    if space and space.free then
+        self.state = STATE.MOVING
+        self.nextState = STATE.ON_BOARD
 
-        -- local pos = self.pos + self.offset
-        -- self.pos = CenterOf(board)-Vector(self.width/2,self.height/2)
-        -- self.offset = pos - self.pos
-        self:moveTo(CenterOf(board)-Vector(self.width/2,self.height/2), 'ON_BOARD')
+        local pos = self.pos + self.offset
+        -- self.pos = space.pos:clone()
+        self.pos = CenterOf(space)-Vector(self.width/2,self.height/2)
+        self.offset = pos - self.pos
+        Card.holding = false
 
+        space.free = false
+        self.space = space
         self.locked = true
-        board.card = self
         return true
     else
-        self:moveTo(nil, 'IN_HAND')
+        self:returnToHand()
         return false
     end
 end
 
 function Card:moveTo(newPos, nextState)
     self.state = STATE.MOVING
-    self.nextState = STATE[nextState]
-
-    if newPos then
-        local pos = self.pos + self.offset
-        self.pos = newPos
-        self.offset = pos - self.pos
-    end
+    self.nextState = STATE.IN_HAND
     Card.holding = false
 end
 
@@ -104,6 +102,17 @@ function Card:isPointInside(point)
     end
 
     return IsPointInsideRect(rect, point)
+end
+
+function Card:remove()
+    if self.space then
+        self.space.free = true
+        self.space = nil
+    end
+end
+
+function Card:isOnBoard()
+    return self.state == STATE.ON_BOARD or self.nextState == STATE.ON_BOARD
 end
 
 function Card:update(dt)
@@ -147,6 +156,9 @@ function Card:draw()
     love.graphics.setColor(1, 1, 1, 1)
     love.graphics.print(self.text, x+5, y+5)
     love.graphics.print(self.state, x+5, y+20)
+    if self.state == STATE.IN_HAND then
+        love.graphics.print(self.position, x+5, y+35)
+    end
 end
 
 return Card
