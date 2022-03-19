@@ -73,7 +73,6 @@ function Hand:removeCard(card)
         elseif type(card) == "number" then
             self.cards[card]:remove()
             self:rearrange(card, true)
-            self.cards[#self.cards] = nil
         end
     end
 end
