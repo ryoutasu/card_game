@@ -1,0 +1,1 @@
+base card mechanics for card game
