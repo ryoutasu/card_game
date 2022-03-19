@@ -11,7 +11,7 @@ function love.load()
     love.window.setMode(1200, 800)
 
     board = Board(600, 400, 7)
-    hand = Hand(50, 750, board)
+    hand = Hand(600, 750, board)
 
     hand:addCard()
     hand:addCard()
@@ -31,7 +31,8 @@ function love.keypressed(key)
     if key == 'space' then
         hand:addCard()
     elseif key == 'r' then
-        hand:removeCard()
+        local card = hand:getCardByXY(love.mouse.getPosition())
+        if card then hand:removeCard(card) end
     end
 end
 

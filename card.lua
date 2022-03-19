@@ -1,8 +1,6 @@
 local Card = Class{}
 Card.holding = false
 
-local offset_x = 10
-
 local riseHeight = 30
 
 local STATE = {
@@ -24,16 +22,6 @@ function Card:init(board, width, height)
     self.space = nil
     self.locked = false
 end
-
--- function Card:setPosition(pos)
---     if self.state == STATE.IN_HAND then
---         self.position = pos
-
---         local p = pos-1
---         self.pos.x = self.hand_point.x + (self.width*p) + (offset_x*p)
---         self.pos.y = self.hand_point.y - self.height
---     end
--- end
 
 function Card:setText(text)
     self.text = text
@@ -64,28 +52,27 @@ function Card:release(x, y)
     local board = self.board
     local space = board:isPointInside({x, y})
     if space and space.free then
-        self.state = STATE.MOVING
-        self.nextState = STATE.ON_BOARD
-
-        local pos = self.pos + self.offset
-        -- self.pos = space.pos:clone()
-        self.pos = CenterOf(space)-Vector(self.width/2,self.height/2)
-        self.offset = pos - self.pos
-        Card.holding = false
+        self:moveTo(CenterOf(space)-Vector(self.width/2,self.height/2), 'ON_BOARD')
 
         space.free = false
         self.space = space
         self.locked = true
         return true
     else
-        self:returnToHand()
+        self:moveTo(nil, 'IN_HAND')
         return false
     end
 end
 
 function Card:moveTo(newPos, nextState)
     self.state = STATE.MOVING
-    self.nextState = STATE.IN_HAND
+    self.nextState = STATE[nextState]
+    
+    if newPos then
+        local pos = self.pos + self.offset
+        self.pos = newPos
+        self.offset = pos - self.pos
+    end
     Card.holding = false
 end
 
@@ -109,10 +96,6 @@ function Card:remove()
         self.space.free = true
         self.space = nil
     end
-end
-
-function Card:isOnBoard()
-    return self.state == STATE.ON_BOARD or self.nextState == STATE.ON_BOARD
 end
 
 function Card:update(dt)
@@ -156,9 +139,6 @@ function Card:draw()
     love.graphics.setColor(1, 1, 1, 1)
     love.graphics.print(self.text, x+5, y+5)
     love.graphics.print(self.state, x+5, y+20)
-    if self.state == STATE.IN_HAND then
-        love.graphics.print(self.position, x+5, y+35)
-    end
 end
 
 return Card

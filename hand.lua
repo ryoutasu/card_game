@@ -23,60 +23,63 @@ function Hand:addCard(card)
     if not Card.holding then
         if self.index < self.maxCards then
             self.index = self.index + 1
-            card = card or Card(self.pos, self.board)
+            card = card or Card(self.board, card_width, card_height)
             if not card.board then card.board = self.board end
             card:setText(N)
             self.cards[#self.cards+1] = card
             self.cards[card] = #self.cards
-            card:setPosition(self.index)
+            self:rearrange()
             
             N = N + 1
         end
     end
 end
 
-function Hand:rearrange(n, remove)
-    if remove then
-        for i = n+1, #self.cards do
-            local card = self.cards[i]
-            self.cards[n] = card
-            self.cards[card] = n
-            n = n + 1
+function Hand:setCardPosition(card, position)
+    local n = self.index
+    local p = position-1
+    local w = n*card_width + (n-1)*offset_x
+    local x = (self.pos.x-w/2) + (card_width*p) + (offset_x*p)
+    local y = self.pos.y - card_height
+
+    card:moveTo(Vector(x, y), 'IN_HAND')
+end
+
+function Hand:rearrange(n)
+    local j = 1
+    for i, card in ipairs(self.cards) do
+        if not card:isOnBoard() then
+            self:setCardPosition(card, j)
+            j = j + 1
         end
-        self.cards[n] = nil
-    else
-        local j = 1
-        for i = 1, #self.cards do
-            local card = self.cards[i]
-            if not card:isOnBoard() then
-                self.cards[i]:setPosition(j)
-                j = j + 1
-            end
-        end
-        self.index = self.index - 1
     end
 end
 
----comment
----@param card nil or Card or number
+function Hand:getCardByXY(x, y)
+    for i, v in ipairs(self.cards) do
+        -- local mx, my = love.mouse.getPosition()
+        if (v:isPointInside({x, y})) then
+            return v
+        end
+    end
+    return false
+end
+
 function Hand:removeCard(card)
     if not Card.holding then
-        if card == nil then
-            for i, v in ipairs(self.cards) do
-                if v:isOnBoard() then
-                    local mx, my = love.mouse.getPosition()
-                    if (v:isPointInside({mx, my})) then
-                        self:removeCard(i)
-                        return
-                    end
-                end
-            end
-        elseif type(card) == "table" then
-            self:removeCard(card.position)
-        elseif type(card) == "number" then
-            self.cards[card]:remove()
-            self:rearrange(card, true)
+        card:remove()
+        local n = self.cards[card]
+        if not self.cards[n]:isOnBoard() then
+            self.index = self.index - 1
         end
+        for i = n+1, #self.cards do
+            local c = self.cards[i]
+            self.cards[n] = c
+            self.cards[c] = n
+            n = n + 1
+        end
+        self.cards[n] = nil
+        self:rearrange()
     end
 end
 
@@ -99,16 +102,21 @@ function Hand:keypressed(key)
     
 end
 
+function Hand:release(x, y)
+    for i, v in ipairs(self.cards) do
+        if v:isHeld() then
+            if v:release(x, y) then
+                self.index = self.index - 1
+                self:rearrange()
+            end
+        end
+    end
+end
+
 function Hand:mousepressed( x, y, button, istouch, presses )
     if button == 1 then
         if Card.holding then
-            for i, v in ipairs(self.cards) do
-                if v:isHeld() then
-                    if v:release(x, y) then
-                        self:rearrange(v.position)
-                    end
-                end
-            end
+            self:release(x, y)
         else
             for i, v in ipairs(self.cards) do
                 if (v:isPointInside({x, y})) and not v.locked then
@@ -125,13 +133,7 @@ function Hand:mousereleased( x, y, button, istouch, presses )
     if button == 1 then
         if Card.holding
         and self.clickTime > holdTime then
-            for i, v in ipairs(self.cards) do
-                if v:isHeld() then
-                    if v:release(x, y) then
-                        self:rearrange(v.position)
-                    end
-                end
-            end
+            self:release(x, y)
         end
     end
 end
