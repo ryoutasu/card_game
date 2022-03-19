@@ -12,3 +12,10 @@ function IsPointInsideRect(rect, point)
     return (x >= rect[1] and x <= rect[3])
         and (y >= rect[2] and y <= rect[4])
 end
+
+function CenterOf(object)
+    local x, y = object.pos:unpack()
+    local w, h = object.width, object.height
+
+    return Vector(x+w/2, y+h/2)
+end

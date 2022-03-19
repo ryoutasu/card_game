@@ -3,9 +3,6 @@ Card.holding = false
 
 local offset_x = 10
 
-local width = 100
-local height = 150
-
 local riseHeight = 30
 
 local STATE = {
@@ -15,10 +12,8 @@ local STATE = {
     MOVING = 4
 }
 
-function Card:init(hand_point, board)
-    self.hand_point = hand_point
-
-    self.pos = Vector(0, 0)
+function Card:init(board, width, height)
+    self.pos = Vector(600, 400)
     self.offset = Vector(0, 0)
     self.hold_point = Vector(0, 0)
     self.width = width
@@ -26,18 +21,18 @@ function Card:init(hand_point, board)
     self.board = board
     self.text = ''
     self.state = STATE.IN_HAND
-    self.space = nil
+    self.locked = false
 end
 
-function Card:setPosition(pos)
-    if self.state == STATE.IN_HAND then
-        self.position = pos
+-- function Card:setPosition(pos)
+--     if self.state == STATE.IN_HAND then
+--         self.position = pos
 
-        local p = pos-1
-        self.pos.x = self.hand_point.x + (width*p) + (offset_x*p)
-        self.pos.y = self.hand_point.y - height
-    end
-end
+--         local p = pos-1
+--         self.pos.x = self.hand_point.x + (self.width*p) + (offset_x*p)
+--         self.pos.y = self.hand_point.y - self.height
+--     end
+-- end
 
 function Card:setText(text)
     self.text = text
@@ -45,6 +40,10 @@ end
 
 function Card:isHeld()
     return self.state == STATE.HOLD
+end
+
+function Card:isOnBoard()
+    return self.state == STATE.ON_BOARD or self.nextState == STATE.ON_BOARD
 end
 
 function Card:hold(doHold)
@@ -62,26 +61,33 @@ end
 
 function Card:release(x, y)
     local board = self.board
-    local space = board:isPointInside({x, y})
-    if space and space.free then
-        self.state = STATE.MOVING
-        self.nexState = STATE.ON_BOARD
+    if not board.card and board:isPointInside({x, y}) then
+        -- self.state = STATE.MOVING
+        -- self.nextState = STATE.ON_BOARD
 
-        local pos = self.pos + self.offset
-        self.pos = space.pos:clone()
-        self.offset = pos - self.pos
-        Card.holding = false
+        -- local pos = self.pos + self.offset
+        -- self.pos = CenterOf(board)-Vector(self.width/2,self.height/2)
+        -- self.offset = pos - self.pos
+        self:moveTo(CenterOf(board)-Vector(self.width/2,self.height/2), 'ON_BOARD')
 
-        space.free = false
-        self.space = space
+        self.locked = true
+        board.card = self
+        return true
     else
-        self:returnToHand()
+        self:moveTo(nil, 'IN_HAND')
+        return false
     end
 end
 
-function Card:returnToHand()
+function Card:moveTo(newPos, nextState)
     self.state = STATE.MOVING
-    self.nexState = STATE.IN_HAND
+    self.nextState = STATE[nextState]
+
+    if newPos then
+        local pos = self.pos + self.offset
+        self.pos = newPos
+        self.offset = pos - self.pos
+    end
     Card.holding = false
 end
 
@@ -98,13 +104,6 @@ function Card:isPointInside(point)
     end
 
     return IsPointInsideRect(rect, point)
-end
-
-function Card:remove()
-    if self.space then
-        self.space.free = true
-        self.space = nil
-    end
 end
 
 function Card:update(dt)
@@ -125,7 +124,7 @@ function Card:update(dt)
 
         if self.offset:len() < 1 then
             self.offset = Vector(0, 0)
-            self.state = self.nexState
+            self.state = self.nextState
         end
     end
 end
