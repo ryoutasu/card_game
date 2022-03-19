@@ -1,15 +1,18 @@
 Class = require 'class'
 Vector = require 'vector'
 Utils = require 'utils'
+local Cards = require 'cardcollection'
 local Hand = require 'hand'
 local Board = require 'board'
 
 local hand = nil
 local board = nil
+local cards = nil
 
 function love.load()
     love.window.setMode(1200, 800)
 
+    cards = Cards()
     board = Board(600, 400, 7)
     hand = Hand(50, 750, board)
 
